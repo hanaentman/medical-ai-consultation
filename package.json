@@ -1,0 +1,12 @@
+{
+  "name": "medical-ai-consultation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Document-grounded medical service consultation chatbot",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

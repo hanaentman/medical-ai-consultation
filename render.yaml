@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: medical-ai-consultation
+    runtime: node
+    plan: starter
+    buildCommand: ""
+    startCommand: "npm start"
+    healthCheckPath: "/api/health"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.5
+      - key: MAX_OUTPUT_TOKENS
+        value: "1400"
