@@ -31,7 +31,7 @@ inputEl.addEventListener("keydown", (event) => {
 
 async function boot() {
   addMessage(
-    "assistant",
+    "bot",
     "안녕하세요. 병원 문서를 기준으로 안내드릴게요. 증상, 예약, 비용, 서류 발급처럼 궁금한 내용을 편하게 입력해 주세요."
   );
 
@@ -50,7 +50,7 @@ async function sendMessage(message) {
   inputEl.value = "";
   setBusy(true);
 
-  const pending = addMessage("assistant", "답변을 준비하고 있습니다.");
+  const pending = addPendingMessage();
 
   try {
     const response = await fetch("/api/chat", {
@@ -61,11 +61,11 @@ async function sendMessage(message) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "상담 요청에 실패했습니다.");
+      throw new Error(data.detail || data.error || "상담 요청에 실패했습니다.");
     }
 
     pending.remove();
-    addMessage("assistant", data.answer, data.sources || []);
+    addMessage("bot", data.answer, data.sources || []);
     history.push({ role: "user", content: message });
     history.push({ role: "assistant", content: data.answer });
     while (history.length > 10) history.shift();
@@ -99,7 +99,28 @@ function addMessage(role, text, sources = []) {
   return message;
 }
 
+function addPendingMessage() {
+  const message = document.createElement("article");
+  message.className = "message bot pending";
+  const text = document.createElement("span");
+  text.textContent = "답변을 준비하고 있습니다.";
+  const dots = document.createElement("span");
+  dots.className = "pending-dots";
+  for (let i = 0; i < 3; i += 1) {
+    const dot = document.createElement("span");
+    dot.className = "pending-dot";
+    dots.appendChild(dot);
+  }
+  message.append(text, dots);
+  messagesEl.appendChild(message);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return message;
+}
+
 function setBusy(isBusy) {
   formEl.querySelector("button").disabled = isBusy;
   inputEl.disabled = isBusy;
+  quickButtons.forEach((button) => {
+    button.disabled = isBusy;
+  });
 }
