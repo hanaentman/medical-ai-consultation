@@ -3,6 +3,7 @@ const formEl = document.querySelector("#chat-form");
 const inputEl = document.querySelector("#message-input");
 const statusEl = document.querySelector("#status");
 const quickButtons = document.querySelectorAll("[data-question]");
+const newChatButton = document.querySelector("#new-chat-button");
 
 const history = [];
 
@@ -20,6 +21,10 @@ quickButtons.forEach((button) => {
     inputEl.value = button.dataset.question;
     inputEl.focus();
   });
+});
+
+newChatButton?.addEventListener("click", () => {
+  resetConversation();
 });
 
 inputEl.addEventListener("keydown", (event) => {
@@ -75,6 +80,14 @@ async function sendMessage(message) {
   } finally {
     setBusy(false);
   }
+}
+
+function resetConversation() {
+  history.length = 0;
+  messagesEl.replaceChildren();
+  inputEl.value = "";
+  boot();
+  inputEl.focus();
 }
 
 async function readResponseJson(response) {
@@ -157,6 +170,7 @@ function addPendingMessage() {
 function setBusy(isBusy) {
   formEl.querySelector("button").disabled = isBusy;
   inputEl.disabled = isBusy;
+  if (newChatButton) newChatButton.disabled = isBusy;
   quickButtons.forEach((button) => {
     button.disabled = isBusy;
   });

@@ -126,6 +126,29 @@ input {
   font-size: 12px;
 }
 
+.chat-tools {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 4px 8px;
+}
+
+.tool-button {
+  min-height: 34px;
+  padding: 8px 13px;
+  border: 1px solid rgba(44, 143, 214, 0.2);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tool-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(44, 143, 214, 0.13);
+}
+
 .chat-panel {
   display: flex;
   flex-direction: column;
@@ -296,6 +319,7 @@ input {
 }
 
 .chip:disabled,
+.tool-button:disabled,
 .composer input:disabled,
 .composer button:disabled {
   opacity: 0.65;
