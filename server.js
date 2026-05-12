@@ -14,6 +14,7 @@ const HOST = process.env.HOST || "0.0.0.0";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1400);
+const OPENAI_STORE_LOGS = process.env.OPENAI_STORE_LOGS === "true";
 
 const documents = loadDocuments(DOC_DIR);
 
@@ -279,7 +280,7 @@ async function createAnswer({ message, history, matches }) {
       }
     ],
     max_output_tokens: MAX_OUTPUT_TOKENS,
-    store: false
+    store: OPENAI_STORE_LOGS
   };
 
   const response = await fetch("https://api.openai.com/v1/responses", {
