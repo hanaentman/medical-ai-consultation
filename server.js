@@ -14,7 +14,7 @@ const HOST = process.env.HOST || "0.0.0.0";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1400);
-const OPENAI_STORE_LOGS = process.env.OPENAI_STORE_LOGS === "true";
+const OPENAI_STORE_LOGS = parseBoolean(process.env.OPENAI_STORE_LOGS);
 
 const documents = loadDocuments(DOC_DIR);
 
@@ -27,7 +27,8 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         model: OPENAI_MODEL,
         documentCount: documents.length,
-        hasApiKey: Boolean(OPENAI_API_KEY)
+        hasApiKey: Boolean(OPENAI_API_KEY),
+        storeLogs: OPENAI_STORE_LOGS
       });
     }
 
@@ -99,6 +100,13 @@ function loadEnv(filePath) {
     }
     if (!process.env[key]) process.env[key] = value;
   }
+}
+
+function parseBoolean(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .toLowerCase() === "true";
 }
 
 function loadDocuments(docDir) {
@@ -298,12 +306,16 @@ async function createAnswer({ message, history, matches }) {
           {
             type: "input_text",
             text: [
-              `병원 문서:\n${context}`,
-              conversation ? `최근 대화:\n${conversation}` : "",
-              `환자 질문:\n${message}`
+              "다음 질문에 답해주세요.",
+              "",
+              `질문: ${message}`,
+              "",
+              "아래 참고 문서를 우선 근거로 사용해 주세요.",
+              context,
+              conversation ? `\n최근 대화:\n${conversation}` : ""
             ]
               .filter(Boolean)
-              .join("\n\n")
+              .join("\n")
           }
         ]
       }
