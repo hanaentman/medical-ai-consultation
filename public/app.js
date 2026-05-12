@@ -65,7 +65,7 @@ async function sendMessage(message) {
     }
 
     pending.remove();
-    addMessage("bot", data.answer, data.sources || []);
+    addMessage("bot", data.answer, data.sources || [], data.images || []);
     history.push({ role: "user", content: message });
     history.push({ role: "assistant", content: data.answer });
     while (history.length > 10) history.shift();
@@ -77,7 +77,7 @@ async function sendMessage(message) {
   }
 }
 
-function addMessage(role, text, sources = []) {
+function addMessage(role, text, sources = [], images = []) {
   const message = document.createElement("article");
   message.className = `message ${role}`;
   message.textContent = text;
@@ -92,6 +92,27 @@ function addMessage(role, text, sources = []) {
       sourceList.appendChild(item);
     }
     message.appendChild(sourceList);
+  }
+
+  if (images.length) {
+    const imageList = document.createElement("div");
+    imageList.className = "image-list";
+    for (const image of images) {
+      const figure = document.createElement("figure");
+      figure.className = "image-card";
+
+      const img = document.createElement("img");
+      img.src = image.url;
+      img.alt = image.title;
+      img.loading = "lazy";
+
+      const caption = document.createElement("figcaption");
+      caption.textContent = image.title;
+
+      figure.append(img, caption);
+      imageList.appendChild(figure);
+    }
+    message.appendChild(imageList);
   }
 
   messagesEl.appendChild(message);

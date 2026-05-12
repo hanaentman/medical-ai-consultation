@@ -47,9 +47,11 @@ const server = http.createServer(async (req, res) => {
 
       const matches = searchDocuments(message, documents, 10);
       const answer = await createAnswer({ message, history, matches });
+      const images = findRelatedImages(message);
 
       return sendJson(res, 200, {
         answer,
+        images,
         sources: matches.map((match) => ({
           title: match.title,
           score: match.score,
@@ -198,6 +200,41 @@ function expandQuery(query) {
     if (query.includes(key)) expanded += ` ${value}`;
   }
   return expanded;
+}
+
+function findRelatedImages(message) {
+  const text = String(message || "").replace(/\s+/g, " ");
+  const images = [];
+
+  if (/위치|약도|오시는\s*길|오시는길|주소|찾아|가는\s*길|어디|지도|역삼|주차/.test(text)) {
+    images.push({
+      title: "병원 약도",
+      url: "/images/%EB%B3%91%EC%9B%90%20%EC%95%BD%EB%8F%84.png"
+    });
+  }
+
+  if (/셔틀|셔틀버스|버스|순환버스/.test(text)) {
+    images.push({
+      title: "셔틀버스 시간표",
+      url: "/images/%EC%85%94%ED%8B%80%EB%B2%84%EC%8A%A4%20%EC%8B%9C%EA%B0%84%ED%91%9C.png"
+    });
+  }
+
+  if (/(입원|수술).{0,12}(약|복용|중단|금지|먹던\s*약)|복용\s*중단|중단\s*약물|약물\s*리스트|아스피린|와파린|항응고|혈전/.test(text)) {
+    images.push({
+      title: "입원전 복용중단 약물 리스트",
+      url: "/images/%EC%9E%85%EC%9B%90%EC%A0%84%20%EB%B3%B5%EC%9A%A9%EC%A4%91%EB%8B%A8%20%EC%95%BD%EB%AC%BC%20%EB%A6%AC%EC%8A%A4%ED%8A%B8.jpg"
+    });
+  }
+
+  if (/진료\s*일정|일정|스케줄|시간표|진료표|근무|휴진|토요일\s*진료|의료진\s*일정|예약\s*가능/.test(text)) {
+    images.push({
+      title: "진료일정전체",
+      url: "/images/%EC%A7%84%EB%A3%8C%EC%9D%BC%EC%A0%95%EC%A0%84%EC%B2%B4.png"
+    });
+  }
+
+  return images;
 }
 
 async function createAnswer({ message, history, matches }) {

@@ -64,38 +64,22 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
 }
 
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #2c8fd6, #8ec7ef);
-  color: #fff;
-  font-size: 28px;
-  font-weight: 900;
-  box-shadow: 0 12px 24px rgba(44, 143, 214, 0.22);
+.hero-logo img {
+  display: block;
+  width: min(220px, 70%);
+  height: auto;
+  object-fit: contain;
 }
 
-.logo-text {
-  display: grid;
-  gap: 3px;
-}
-
-.logo-text span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.logo-text strong {
+.hero h1 {
+  margin: 0;
   color: var(--text);
-  font-size: 21px;
+  font-size: 24px;
   line-height: 1.1;
+  text-align: center;
 }
 
 .subtitle {
@@ -228,6 +212,36 @@ input {
   font-weight: 800;
 }
 
+.image-list {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(44, 143, 214, 0.14);
+  display: grid;
+  gap: 10px;
+}
+
+.image-card {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(44, 143, 214, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.image-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #dfeaf5;
+}
+
+.image-card figcaption {
+  padding: 9px 11px 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .quick-actions {
   display: flex;
   flex-wrap: wrap;
@@ -337,15 +351,8 @@ input {
     border-radius: 24px;
   }
 
-  .logo-mark {
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    font-size: 24px;
-  }
-
-  .logo-text strong {
-    font-size: 19px;
+  .hero h1 {
+    font-size: 21px;
   }
 
   .chat-panel {
