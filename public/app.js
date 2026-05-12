@@ -37,7 +37,7 @@ async function boot() {
 
   try {
     const response = await fetch("/api/health");
-    const data = await response.json();
+    const data = await readResponseJson(response);
     const keyState = data.hasApiKey ? "API 키 연결됨" : "API 키 필요";
     statusEl.textContent = `문서 ${data.documentCount}개 로드됨 · ${data.model} · ${keyState}`;
   } catch {
@@ -58,7 +58,7 @@ async function sendMessage(message) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, history })
     });
-    const data = await response.json();
+    const data = await readResponseJson(response);
 
     if (!response.ok) {
       throw new Error(data.detail || data.error || "상담 요청에 실패했습니다.");
@@ -75,6 +75,22 @@ async function sendMessage(message) {
   } finally {
     setBusy(false);
   }
+}
+
+async function readResponseJson(response) {
+  const text = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return text ? JSON.parse(text) : {};
+  }
+
+  const preview = text.replace(/\s+/g, " ").slice(0, 120);
+  throw new Error(
+    response.ok
+      ? "서버가 JSON이 아닌 응답을 보냈습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."
+      : `서버 오류가 발생했습니다. (${response.status}) ${preview}`
+  );
 }
 
 function addMessage(role, text, sources = [], images = []) {
