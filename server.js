@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
 
       const matches = searchDocuments(message, documents, 10);
       const answer = await createAnswer({ message, history, matches });
-      const images = findRelatedImages(message);
+      const images = findRelatedImages(message, answer);
 
       return sendJson(res, 200, {
         answer,
@@ -203,8 +203,9 @@ function expandQuery(query) {
   return expanded;
 }
 
-function findRelatedImages(message) {
+function findRelatedImages(message, answer = "") {
   const text = String(message || "").replace(/\s+/g, " ");
+  const answerText = String(answer || "");
   const images = [];
 
   if (/위치|약도|오시는\s*길|오시는길|주소|찾아|가는\s*길|어디|지도|역삼|주차/.test(text)) {
@@ -233,6 +234,34 @@ function findRelatedImages(message) {
       title: "진료일정전체",
       url: "/images/%EC%A7%84%EB%A3%8C%EC%9D%BC%EC%A0%95%EC%A0%84%EC%B2%B4.png"
     });
+  }
+
+  const doctorNames = [
+    "동헌종",
+    "이상덕",
+    "정도광",
+    "남순열",
+    "주형로",
+    "장선오",
+    "장정훈",
+    "김태현",
+    "정종인",
+    "김종세",
+    "김병세",
+    "장규선",
+    "김병길",
+    "이영미",
+    "강매화",
+    "문보은"
+  ];
+
+  for (const name of doctorNames) {
+    if (answerText.includes(name) || text.includes(name)) {
+      images.push({
+        title: `${name} 의료진`,
+        url: `/images/${encodeURIComponent(`${name}.png`)}`
+      });
+    }
   }
 
   return images;
