@@ -16,7 +16,6 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1400);
 
 const documents = loadDocuments(DOC_DIR);
-const doctors = loadDoctors(DOC_DIR);
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -46,10 +45,8 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const conversationQuery = buildConversationQuery(message, history);
-      const matches = searchDocuments(conversationQuery, documents, 10);
-      const doctorMatches = searchDoctors(conversationQuery, doctors, 5);
-      const answer = await createAnswer({ message, history, matches, doctorMatches });
+      const matches = searchDocuments(message, documents, 10);
+      const answer = await createAnswer({ message, history, matches });
 
       return sendJson(res, 200, {
         answer,
@@ -122,36 +119,6 @@ function loadDocuments(docDir) {
   });
 }
 
-function loadDoctors(docDir) {
-  const filePath = path.join(docDir, "홈페이지-의료진 정보.txt");
-  if (!fs.existsSync(filePath)) return [];
-
-  const raw = fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
-  const blocks = raw.split(/\n(?=이름:\s*)/).filter((block) => block.includes("이름:"));
-
-  return blocks
-    .map((block) => {
-      const name = readField(block, "이름");
-      const department = readField(block, "진료과");
-      const specialty = readField(block, "전문분야");
-      if (!name || !specialty) return null;
-      return {
-        title: `${name} ${department}`,
-        name,
-        department,
-        specialty,
-        text: `${name} 의료진\n진료과: ${department}\n전문분야: ${specialty}`,
-        terms: tokenize(`${name} ${department} ${specialty}`)
-      };
-    })
-    .filter(Boolean);
-}
-
-function readField(text, label) {
-  const match = text.match(new RegExp(`^${label}:?\\s*(.+)$`, "m"));
-  return match ? match[1].trim() : "";
-}
-
 function chunkText(text, maxLength) {
   if (text.length <= maxLength) return [text];
 
@@ -214,47 +181,6 @@ function searchDocuments(query, docs, limit) {
     .slice(0, limit);
 }
 
-function searchDoctors(query, doctorList, limit) {
-  if (!isSymptomQuestion(query)) return [];
-
-  const expanded = expandQuery(query);
-  const queryTerms = tokenize(expanded);
-  const querySet = new Set(queryTerms);
-
-  return doctorList
-    .map((doctor) => {
-      let score = 0;
-      for (const term of doctor.terms) {
-        if (querySet.has(term)) score += term.length > 3 ? 4 : 2;
-        if (expanded.includes(term)) score += 1;
-      }
-
-      if (/코|콧물|코막힘|비염|축농|후각|코피|코골|수면무호흡/.test(expanded) && /코|비염|부비동|비중격|코골이|수면무호흡/.test(doctor.text)) score += 5;
-      if (/귀|이명|난청|어지|중이염|보청기|돌발성/.test(expanded) && /귀|이명|난청|어지럼|중이염|보청기|돌발성/.test(doctor.text)) score += 6;
-      if (/목|편도|갑상선|침샘|후두|성대|목소리|인후두|멍울|혹/.test(expanded) && /목|두경부|편도|갑상선|침샘|후두|음성|인후두|구강/.test(doctor.text)) score += 6;
-      if (/수면|코골이|무호흡|수면다원/.test(expanded) && /수면|코골이|무호흡/.test(doctor.text)) score += 7;
-
-      return { ...doctor, score };
-    })
-    .filter((doctor) => doctor.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-}
-
-function isSymptomQuestion(query) {
-  return /아파|아픔|통증|증상|붓|부음|피|출혈|막힘|답답|콧물|코피|기침|가래|먹먹|이명|난청|어지|목소리|쉼|이물감|멍울|혹|편도|비염|축농|코골|무호흡|수면|후각|냄새|침샘|갑상선|중이염|보청기|부작용/.test(query);
-}
-
-function buildConversationQuery(message, history) {
-  const recent = Array.isArray(history)
-    ? history
-        .slice(-6)
-        .map((item) => item?.content || "")
-        .join(" ")
-    : "";
-  return `${recent} ${message}`.trim();
-}
-
 function expandQuery(query) {
   const synonyms = {
     예약: "예약 접수 진료 시간 변경 취소 당일",
@@ -274,18 +200,12 @@ function expandQuery(query) {
   return expanded;
 }
 
-async function createAnswer({ message, history, matches, doctorMatches }) {
+async function createAnswer({ message, history, matches }) {
   const context = matches.length
     ? matches
         .map((match, index) => `[자료 ${index + 1}: ${match.title}]\n${match.text}`)
         .join("\n\n---\n\n")
     : "질문과 직접 관련된 병원 문서를 찾지 못했습니다.";
-
-  const doctorContext = doctorMatches?.length
-    ? doctorMatches
-        .map((doctor, index) => `[의료진 ${index + 1}: ${doctor.name}]\n진료과: ${doctor.department}\n전문분야: ${doctor.specialty}`)
-        .join("\n\n")
-    : "증상과 직접 연결할 의료진 전문분야 문서를 찾지 못했습니다.";
 
   const conversation = history
     .filter((item) => item && item.role && item.content)
@@ -297,10 +217,8 @@ async function createAnswer({ message, history, matches, doctorMatches }) {
     instructions: [
       "당신은 병원 의료 서비스 AI 상담원입니다.",
       "답변 품질을 최우선으로 하되, 병원 문서를 핵심 근거로 삼아 환자에게 실제로 도움이 되는 다음 행동을 안내하세요.",
-      "최근 대화가 있으면 반드시 맥락을 이어서 이해하세요. 사용자가 '그럼', '이건', '아까 말한 증상'처럼 지시어를 쓰면 최근 대화의 질문과 답변을 참고해 해석하세요.",
       "문서에 직접 없는 내용도 일반적인 의료 상담 상식 수준에서 설명할 수 있지만, 병원 정책/가격/시간/의료진/예약/서류 정보는 문서에 근거가 없으면 확인이 필요하다고 말하세요.",
-      "증상 상담에서는 먼저 증상에 대해 이해하기 쉽게 답변하고, 가능한 원인을 단정하지 말고, 확인이 필요한 점과 적절한 진료 센터를 안내하세요.",
-      "증상 상담이면 반드시 제공된 의료진 전문분야를 참고해 관련 의료진을 1~3명 소개하세요. 이름, 진료과, 전문분야를 짧게 언급하고, 최종 배정은 예약/진료 상황에 따라 달라질 수 있다고 안내하세요.",
+      "증상 상담에서는 가능한 원인을 단정하지 말고, 환자가 이해할 수 있는 범위에서 가능성, 확인이 필요한 점, 적절한 진료 센터 또는 문의 경로를 안내하세요.",
       "진단명 확정, 처방, 약 복용/중단 지시, 검사 결과 판독, 수술 필요 여부 확정은 하지 마세요.",
       "호흡곤란, 심한 출혈, 의식저하, 급격한 악화, 극심한 통증, 신경학적 이상 등 응급 가능성이 있으면 즉시 119 또는 응급실을 안내하세요.",
       "답변은 한국어로 자연스럽게 작성하고, 질문이 단순하면 짧게 답하되 복잡하면 항목을 나누어 충분히 설명하세요.",
@@ -314,7 +232,6 @@ async function createAnswer({ message, history, matches, doctorMatches }) {
             type: "input_text",
             text: [
               `병원 문서:\n${context}`,
-              `의료진 전문분야 문서:\n${doctorContext}`,
               conversation ? `최근 대화:\n${conversation}` : "",
               `환자 질문:\n${message}`
             ]
