@@ -256,6 +256,12 @@ input {
   width: 100%;
   height: auto;
   background: #dfeaf5;
+  cursor: zoom-in;
+}
+
+.image-card img:focus {
+  outline: 3px solid rgba(44, 143, 214, 0.32);
+  outline-offset: -3px;
 }
 
 .image-card figcaption {
@@ -263,6 +269,59 @@ input {
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.modal-open {
+  overflow: hidden;
+}
+
+.image-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  gap: 14px;
+  padding: 52px 18px 24px;
+  background: rgba(9, 22, 36, 0.82);
+}
+
+.image-modal[hidden] {
+  display: none;
+}
+
+.image-modal img {
+  display: block;
+  max-width: min(1100px, 96vw);
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+}
+
+.image-modal p {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.image-modal-close {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #17324a;
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
 }
 
 .quick-actions {

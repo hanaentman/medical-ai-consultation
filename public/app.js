@@ -4,6 +4,10 @@ const inputEl = document.querySelector("#message-input");
 const statusEl = document.querySelector("#status");
 const quickButtons = document.querySelectorAll("[data-question]");
 const newChatButton = document.querySelector("#new-chat-button");
+const imageModal = document.querySelector("#image-modal");
+const imageModalImg = document.querySelector("#image-modal-img");
+const imageModalCaption = document.querySelector("#image-modal-caption");
+const imageModalClose = document.querySelector(".image-modal-close");
 
 const history = [];
 
@@ -25,6 +29,17 @@ quickButtons.forEach((button) => {
 
 newChatButton?.addEventListener("click", () => {
   resetConversation();
+});
+
+imageModalClose?.addEventListener("click", closeImageModal);
+imageModal?.addEventListener("click", (event) => {
+  if (event.target === imageModal) closeImageModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && imageModal && !imageModal.hidden) {
+    closeImageModal();
+  }
 });
 
 inputEl.addEventListener("keydown", (event) => {
@@ -134,6 +149,15 @@ function addMessage(role, text, sources = [], images = []) {
       img.src = image.url;
       img.alt = image.title;
       img.loading = "lazy";
+      img.tabIndex = 0;
+      img.setAttribute("role", "button");
+      img.addEventListener("click", () => openImageModal(image.url, image.title));
+      img.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openImageModal(image.url, image.title);
+        }
+      });
 
       const caption = document.createElement("figcaption");
       caption.textContent = image.title;
@@ -147,6 +171,23 @@ function addMessage(role, text, sources = [], images = []) {
   messagesEl.appendChild(message);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   return message;
+}
+
+function openImageModal(url, title) {
+  if (!imageModal || !imageModalImg || !imageModalCaption) return;
+  imageModalImg.src = url;
+  imageModalImg.alt = title || "첨부 이미지";
+  imageModalCaption.textContent = title || "";
+  imageModal.hidden = false;
+  document.body.classList.add("modal-open");
+  imageModalClose?.focus();
+}
+
+function closeImageModal() {
+  if (!imageModal || !imageModalImg) return;
+  imageModal.hidden = true;
+  imageModalImg.src = "";
+  document.body.classList.remove("modal-open");
 }
 
 function addPendingMessage() {
