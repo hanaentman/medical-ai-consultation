@@ -185,20 +185,32 @@ function appendTextWithPhoneLinks(container, text) {
     }
 
     const matchedText = match[0];
-    const link = document.createElement("a");
-    link.textContent = matchedText;
+    const trailing = matchedText.match(/[.,!?;:)\]}*]+$/)?.[0] || "";
+    const linkText = trailing ? matchedText.slice(0, -trailing.length) : matchedText;
 
-    if (matchedText === "02-6925-1111") {
+    if (!linkText) {
+      container.appendChild(document.createTextNode(matchedText));
+      lastIndex = match.index + matchedText.length;
+      continue;
+    }
+
+    const link = document.createElement("a");
+    link.textContent = linkText;
+
+    if (linkText === "02-6925-1111") {
       link.className = "phone-link";
       link.href = "tel:0269251111";
     } else {
       link.className = "external-link";
-      link.href = matchedText;
+      link.href = linkText;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
     }
 
     container.appendChild(link);
+    if (trailing) {
+      container.appendChild(document.createTextNode(trailing));
+    }
 
     lastIndex = match.index + matchedText.length;
   }
