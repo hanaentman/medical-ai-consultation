@@ -181,7 +181,7 @@ function appendTextWithPhoneLinks(container, text) {
 
   while ((match = linkPattern.exec(value)) !== null) {
     if (match.index > lastIndex) {
-      container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
+      appendPlainText(container, value.slice(lastIndex, match.index));
     }
 
     const matchedText = match[0];
@@ -208,7 +208,7 @@ function appendTextWithPhoneLinks(container, text) {
     }
 
     container.appendChild(link);
-    if (trailing) {
+    if (trailing && trailing !== "**") {
       container.appendChild(document.createTextNode(trailing));
     }
 
@@ -216,8 +216,12 @@ function appendTextWithPhoneLinks(container, text) {
   }
 
   if (lastIndex < value.length) {
-    container.appendChild(document.createTextNode(value.slice(lastIndex)));
+    appendPlainText(container, value.slice(lastIndex));
   }
+}
+
+function appendPlainText(container, text) {
+  container.appendChild(document.createTextNode(String(text || "").replace(/\*\*/g, "")));
 }
 
 function openImageModal(url, title) {
