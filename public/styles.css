@@ -188,6 +188,21 @@ input {
   color: #733400;
 }
 
+.phone-link {
+  color: inherit;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.message.bot .phone-link {
+  color: var(--primary-dark);
+}
+
+.message.user .phone-link {
+  color: #fff;
+}
+
 .message.pending {
   display: inline-flex;
   flex-direction: column;

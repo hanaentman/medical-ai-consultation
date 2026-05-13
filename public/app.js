@@ -124,7 +124,7 @@ async function readResponseJson(response) {
 function addMessage(role, text, sources = [], images = []) {
   const message = document.createElement("article");
   message.className = `message ${role}`;
-  message.textContent = text;
+  appendTextWithPhoneLinks(message, text);
 
   if (sources.length) {
     const sourceList = document.createElement("div");
@@ -171,6 +171,31 @@ function addMessage(role, text, sources = [], images = []) {
   messagesEl.appendChild(message);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   return message;
+}
+
+function appendTextWithPhoneLinks(container, text) {
+  const phonePattern = /02-6925-1111/g;
+  const value = String(text || "");
+  let lastIndex = 0;
+  let match;
+
+  while ((match = phonePattern.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
+    }
+
+    const link = document.createElement("a");
+    link.className = "phone-link";
+    link.href = "tel:0269251111";
+    link.textContent = match[0];
+    container.appendChild(link);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < value.length) {
+    container.appendChild(document.createTextNode(value.slice(lastIndex)));
+  }
 }
 
 function openImageModal(url, title) {
