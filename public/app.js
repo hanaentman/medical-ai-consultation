@@ -174,23 +174,33 @@ function addMessage(role, text, sources = [], images = []) {
 }
 
 function appendTextWithPhoneLinks(container, text) {
-  const phonePattern = /02-6925-1111/g;
+  const linkPattern = /(02-6925-1111|https?:\/\/[^\s<>"']+)/g;
   const value = String(text || "");
   let lastIndex = 0;
   let match;
 
-  while ((match = phonePattern.exec(value)) !== null) {
+  while ((match = linkPattern.exec(value)) !== null) {
     if (match.index > lastIndex) {
       container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
     }
 
+    const matchedText = match[0];
     const link = document.createElement("a");
-    link.className = "phone-link";
-    link.href = "tel:0269251111";
-    link.textContent = match[0];
+    link.textContent = matchedText;
+
+    if (matchedText === "02-6925-1111") {
+      link.className = "phone-link";
+      link.href = "tel:0269251111";
+    } else {
+      link.className = "external-link";
+      link.href = matchedText;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+
     container.appendChild(link);
 
-    lastIndex = match.index + match[0].length;
+    lastIndex = match.index + matchedText.length;
   }
 
   if (lastIndex < value.length) {

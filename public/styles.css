@@ -188,18 +188,22 @@ input {
   color: #733400;
 }
 
-.phone-link {
+.phone-link,
+.external-link {
   color: inherit;
   font-weight: 900;
   text-decoration: underline;
   text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }
 
-.message.bot .phone-link {
+.message.bot .phone-link,
+.message.bot .external-link {
   color: var(--primary-dark);
 }
 
-.message.user .phone-link {
+.message.user .phone-link,
+.message.user .external-link {
   color: #fff;
 }
 
