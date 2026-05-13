@@ -194,7 +194,7 @@ function addPendingMessage() {
   const message = document.createElement("article");
   message.className = "message bot pending";
   const text = document.createElement("span");
-  text.textContent = "답변을 준비하고 있습니다.";
+  text.textContent = "답변을 준비하고 있습니다.\n상담원: 답변을 하는데 최대 30초 걸릴 수 있습니다.";
   const dots = document.createElement("span");
   dots.className = "pending-dots";
   for (let i = 0; i < 3; i += 1) {
