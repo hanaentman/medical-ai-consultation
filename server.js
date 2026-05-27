@@ -244,35 +244,38 @@ function findRelatedImages(message, answer = "") {
     });
   }
 
-  const doctorNames = [
-    "동헌종",
-    "이상덕",
-    "정도광",
-    "남순열",
-    "주형로",
-    "장선오",
-    "장정훈",
-    "김태현",
-    "정종인",
-    "김종세",
-    "김병세",
-    "장규선",
-    "김병길",
-    "이영미",
-    "강매화",
-    "문보은"
-  ];
-
-  for (const name of doctorNames) {
+  for (const { name, file } of getDoctorImageFiles()) {
     if (answerText.includes(name) || text.includes(name)) {
       images.push({
         title: `${name} 의료진`,
-        url: `/images/${encodeURIComponent(`${name}.png`)}`
+        url: `/images/${encodeURIComponent(file)}`
       });
     }
   }
 
   return images;
+}
+
+function getDoctorImageFiles() {
+  if (!fs.existsSync(path.join(PUBLIC_DIR, "images"))) return [];
+
+  const nonDoctorFiles = new Set([
+    "CI.png",
+    "병원 약도.png",
+    "셔틀버스 시간표.png",
+    "입원전 복용중단 약물 리스트.jpg",
+    "진료일정전체.png"
+  ]);
+
+  return fs
+    .readdirSync(path.join(PUBLIC_DIR, "images"))
+    .filter((file) => /\.(png|jpe?g|webp)$/i.test(file))
+    .filter((file) => !nonDoctorFiles.has(file))
+    .map((file) => ({
+      file,
+      name: path.basename(file, path.extname(file))
+    }))
+    .filter(({ name }) => name.length >= 2);
 }
 
 async function createAnswer({ message, history, matches }) {
