@@ -230,13 +230,6 @@ function findRelatedImages(message, answer = "") {
     });
   }
 
-  if (/(입원|수술).{0,12}(약|복용|중단|금지|먹던\s*약)|복용\s*중단|중단\s*약물|약물\s*리스트|아스피린|와파린|항응고|혈전/.test(text)) {
-    images.push({
-      title: "입원전 복용중단 약물 리스트",
-      url: "/images/%EC%9E%85%EC%9B%90%EC%A0%84%20%EB%B3%B5%EC%9A%A9%EC%A4%91%EB%8B%A8%20%EC%95%BD%EB%AC%BC%20%EB%A6%AC%EC%8A%A4%ED%8A%B8.jpg"
-    });
-  }
-
   if (/진료\s*일정|일정|스케줄|시간표|진료표|근무|휴진|토요일\s*진료|의료진\s*일정|예약\s*가능/.test(text)) {
     images.push({
       title: "진료일정전체",
@@ -263,7 +256,6 @@ function getDoctorImageFiles() {
     "CI.png",
     "병원 약도.png",
     "셔틀버스 시간표.png",
-    "입원전 복용중단 약물 리스트.jpg",
     "진료일정전체.png"
   ]);
 
