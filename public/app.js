@@ -52,7 +52,7 @@ inputEl.addEventListener("keydown", (event) => {
 async function boot() {
   addMessage(
     "bot",
-    "안녕하세요. 병원 문서를 기준으로 안내드릴게요. 증상, 예약, 비용, 서류 발급처럼 궁금한 내용을 편하게 입력해 주세요."
+    "상담원: 안녕하세요. 병원 문서를 기준으로 안내드릴게요. 증상, 예약, 비용, 서류 발급처럼 궁금한 내용을 편하게 입력해 주세요."
   );
 
   try {
