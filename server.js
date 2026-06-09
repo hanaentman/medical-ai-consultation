@@ -357,16 +357,19 @@ function extractText(response) {
 
 function readJson(req) {
   return new Promise((resolve, reject) => {
-    let raw = "";
+    const chunks = [];
+    let size = 0;
     req.on("data", (chunk) => {
-      raw += chunk;
-      if (raw.length > 1024 * 1024) {
+      chunks.push(chunk);
+      size += chunk.length;
+      if (size > 1024 * 1024) {
         req.destroy();
         reject(new Error("요청이 너무 큽니다."));
       }
     });
     req.on("end", () => {
       try {
+        const raw = Buffer.concat(chunks).toString("utf8");
         resolve(raw ? JSON.parse(raw) : {});
       } catch {
         reject(new Error("JSON 형식이 올바르지 않습니다."));
