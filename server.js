@@ -5,7 +5,7 @@ const path = require("path");
 const ROOT = __dirname;
 const DOC_DIR = path.join(ROOT, "doct");
 const PUBLIC_DIR = path.join(ROOT, "public");
-const DEFAULT_MODEL = "gpt-5.5";
+const DEFAULT_MODEL = "gpt-5.6-sol";
 
 loadEnv(path.join(ROOT, ".env"));
 

@@ -8,7 +8,7 @@
 
 ```env
 OPENAI_API_KEY=여기에_API_KEY_입력
-OPENAI_MODEL=gpt-5.5
+OPENAI_MODEL=gpt-5.6-sol
 MAX_OUTPUT_TOKENS=1400
 PORT=3000
 ```
@@ -61,10 +61,10 @@ Health Check Path: /api/health
 
 ```text
 OPENAI_API_KEY=새로 발급한 API 키
-OPENAI_MODEL=gpt-5.5
+OPENAI_MODEL=gpt-5.6-sol
 MAX_OUTPUT_TOKENS=1400
 ```
 
 중요: 대화나 저장소에 노출된 API 키는 폐기하고 새 키를 발급해서 Render 환경변수에만 넣는 것을 권장합니다.
 
-참고: OpenAI 공식 모델 문서에서 `gpt-5.5`가 계정에 제공되지 않으면 API가 `model_not_found`를 반환할 수 있습니다. 그 경우 Render 환경변수의 `OPENAI_MODEL`을 계정에서 사용 가능한 최신 모델 ID로 바꾸면 됩니다.
+참고: OpenAI 공식 모델 문서에서 `gpt-5.6-sol`이 계정에 제공되지 않으면 API가 `model_not_found`를 반환할 수 있습니다. 그 경우 Render 환경변수의 `OPENAI_MODEL`을 계정에서 사용 가능한 모델 ID로 바꾸면 됩니다.
