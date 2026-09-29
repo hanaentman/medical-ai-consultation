@@ -54,6 +54,17 @@
         </section>
 
         <form id="search-form" class="toolbar">
+          <div class="date-filters" role="group" aria-label="조회 기간 (한국시간)">
+            <label class="date-field">
+              <span>시작일</span>
+              <input id="start-date" name="startDate" type="date" />
+            </label>
+            <label class="date-field">
+              <span>종료일</span>
+              <input id="end-date" name="endDate" type="date" />
+            </label>
+            <button id="reset-dates-button" type="button" class="secondary-button">기간 초기화</button>
+          </div>
           <label class="search-field">
             <span class="sr-only">질문과 답변 검색</span>
             <input id="search-input" type="search" placeholder="질문 또는 답변 검색" />
@@ -74,7 +85,7 @@
           <table>
             <thead>
               <tr>
-                <th>일시</th>
+                <th>일시 (한국시간)</th>
                 <th>상담번호</th>
                 <th>질문</th>
                 <th>답변</th>

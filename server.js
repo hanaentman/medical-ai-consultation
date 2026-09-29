@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { parseDateRange, readChatLogs } = require("./lib/chat-history");
 
 const ROOT = __dirname;
 const DOC_DIR = path.join(ROOT, "doct");
@@ -56,9 +57,19 @@ const server = http.createServer(async (req, res) => {
         500
       );
       const query = String(url.searchParams.get("query") || "").trim();
-      const records = await readRecentChatLogs(limit, query);
+      let dateRange;
+      try {
+        dateRange = parseDateRange(
+          url.searchParams.get("startDate") || "",
+          url.searchParams.get("endDate") || ""
+        );
+      } catch (error) {
+        return sendJson(res, 400, { error: error.message });
+      }
+      const result = await readChatLogs(CHAT_LOG_PATH, { limit, query, ...dateRange });
 
-      return sendJson(res, 200, { records });
+      res.setHeader("Cache-Control", "no-store");
+      return sendJson(res, 200, result);
     }
 
     if (req.method === "POST" && url.pathname === "/api/chat") {
@@ -188,47 +199,6 @@ function queueChatLog({ sessionId, question, answer, sources, durationMs }) {
     .catch((error) => {
       console.error("Chat history logging failed:", error.message);
     });
-}
-
-async function readRecentChatLogs(limit, query) {
-  if (!fs.existsSync(CHAT_LOG_PATH)) return [];
-
-  const file = await fs.promises.open(CHAT_LOG_PATH, "r");
-  try {
-    const { size } = await file.stat();
-    const maxBytes = 5 * 1024 * 1024;
-    const start = Math.max(0, size - maxBytes);
-    const buffer = Buffer.alloc(size - start);
-    await file.read(buffer, 0, buffer.length, start);
-
-    let text = buffer.toString("utf8");
-    if (start > 0) {
-      const firstNewline = text.indexOf("\n");
-      text = firstNewline === -1 ? "" : text.slice(firstNewline + 1);
-    }
-
-    const needle = query.toLocaleLowerCase("ko");
-    return text
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .reverse()
-      .flatMap((line) => {
-        try {
-          return [JSON.parse(line)];
-        } catch {
-          return [];
-        }
-      })
-      .filter((record) => {
-        if (!needle) return true;
-        return `${record.question || ""}\n${record.answer || ""}`
-          .toLocaleLowerCase("ko")
-          .includes(needle);
-      })
-      .slice(0, limit);
-  } finally {
-    await file.close();
-  }
 }
 
 function isAdminAuthorized(req) {

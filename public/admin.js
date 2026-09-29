@@ -4,6 +4,9 @@ const loginForm = document.querySelector("#login-form");
 const loginError = document.querySelector("#login-error");
 const searchForm = document.querySelector("#search-form");
 const searchInput = document.querySelector("#search-input");
+const startDateInput = document.querySelector("#start-date");
+const endDateInput = document.querySelector("#end-date");
+const resetDatesButton = document.querySelector("#reset-dates-button");
 const limitSelect = document.querySelector("#limit-select");
 const refreshButton = document.querySelector("#refresh-button");
 const exportButton = document.querySelector("#export-button");
@@ -49,10 +52,20 @@ searchForm.addEventListener("submit", async (event) => {
 refreshButton.addEventListener("click", loadRecordsSafely);
 limitSelect.addEventListener("change", loadRecordsSafely);
 exportButton.addEventListener("click", exportCsv);
+startDateInput.addEventListener("input", () => endDateInput.setCustomValidity(""));
+endDateInput.addEventListener("input", () => endDateInput.setCustomValidity(""));
+resetDatesButton.addEventListener("click", async () => {
+  startDateInput.value = "";
+  endDateInput.value = "";
+  endDateInput.setCustomValidity("");
+  await loadRecordsSafely();
+});
 
 logoutButton.addEventListener("click", () => {
   authorization = "";
   currentRecords = [];
+  searchForm.reset();
+  endDateInput.setCustomValidity("");
   recordsBody.replaceChildren();
   dashboardView.hidden = true;
   loginView.hidden = false;
@@ -61,6 +74,9 @@ logoutButton.addEventListener("click", () => {
 });
 
 async function loadRecordsSafely() {
+  const reversed = startDateInput.value && endDateInput.value && startDateInput.value > endDateInput.value;
+  endDateInput.setCustomValidity(reversed ? "종료일은 시작일보다 빠를 수 없습니다." : "");
+  if (!searchForm.reportValidity()) return;
   try {
     await loadRecords();
   } catch (error) {
@@ -70,12 +86,15 @@ async function loadRecordsSafely() {
 
 async function loadRecords() {
   setLoading(true);
-  dashboardMessage.textContent = "";
 
   try {
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
     const params = new URLSearchParams({
       limit: limitSelect.value,
-      query: searchInput.value.trim()
+      query: searchInput.value.trim(),
+      startDate,
+      endDate
     });
     const response = await fetch(`/api/admin/chats?${params}`, {
       headers: { Authorization: authorization },
@@ -89,6 +108,12 @@ async function loadRecords() {
 
     currentRecords = Array.isArray(data.records) ? data.records : [];
     renderRecords(currentRecords);
+    const period = startDate || endDate
+      ? `${startDate || "처음"} ~ ${endDate || "현재"} (한국시간)`
+      : "전체 기간";
+    dashboardMessage.textContent = data.hasMore
+      ? `${period} · 최신 ${currentRecords.length}건 표시 · 추가 기록 있음`
+      : `${period} · ${currentRecords.length}건`;
   } finally {
     setLoading(false);
   }
@@ -97,6 +122,7 @@ async function loadRecords() {
 function renderRecords(records) {
   recordsBody.replaceChildren();
   emptyState.hidden = records.length > 0;
+  emptyState.textContent = "조회 조건에 맞는 상담 기록이 없습니다.";
 
   for (const record of records) {
     const row = document.createElement("tr");
@@ -201,6 +227,7 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     year: "2-digit",
     month: "2-digit",
     day: "2-digit",
