@@ -137,7 +137,7 @@ function createExpandableCell(text, label) {
   preview.textContent = value;
   cell.appendChild(preview);
 
-  if (value.length > 180) {
+  if (value.length > 0) {
     const details = document.createElement("details");
     const summary = document.createElement("summary");
     const fullText = document.createElement("div");
