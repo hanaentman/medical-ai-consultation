@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const ROOT = __dirname;
 const DOC_DIR = path.join(ROOT, "doct");
@@ -15,8 +16,15 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1400);
 const OPENAI_STORE_LOGS = parseBoolean(process.env.OPENAI_STORE_LOGS);
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const CHAT_LOG_PATH = path.resolve(
+  ROOT,
+  process.env.CHAT_LOG_PATH || path.join("data", "chat-history.jsonl")
+);
 
 const documents = loadDocuments(DOC_DIR);
+let chatLogQueue = Promise.resolve();
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -32,10 +40,32 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === "GET" && url.pathname === "/api/admin/chats") {
+      if (!ADMIN_PASSWORD) {
+        return sendJson(res, 503, {
+          error: "관리자 비밀번호가 설정되지 않았습니다."
+        });
+      }
+
+      if (!isAdminAuthorized(req)) {
+        return sendAdminUnauthorized(res);
+      }
+
+      const limit = Math.min(
+        Math.max(Number.parseInt(url.searchParams.get("limit"), 10) || 200, 1),
+        500
+      );
+      const query = String(url.searchParams.get("query") || "").trim();
+      const records = await readRecentChatLogs(limit, query);
+
+      return sendJson(res, 200, { records });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/chat") {
       const body = await readJson(req);
       const message = String(body.message || "").trim();
       const history = Array.isArray(body.history) ? body.history.slice(-8) : [];
+      const sessionId = normalizeSessionId(body.sessionId);
 
       if (!message) {
         return sendJson(res, 400, { error: "질문을 입력해 주세요." });
@@ -47,11 +77,11 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
+      const startedAt = Date.now();
       const matches = searchDocuments(message, documents, 10);
       const answer = await createAnswer({ message, history, matches });
       const images = findRelatedImages(message, answer);
-
-      return sendJson(res, 200, {
+      const responseBody = {
         answer,
         images,
         sources: matches.map((match) => ({
@@ -59,10 +89,23 @@ const server = http.createServer(async (req, res) => {
           score: match.score,
           preview: match.text.slice(0, 220)
         }))
+      };
+
+      sendJson(res, 200, responseBody);
+      queueChatLog({
+        sessionId,
+        question: message,
+        answer,
+        sources: matches.map((match) => match.title),
+        durationMs: Date.now() - startedAt
       });
+      return;
     }
 
     if (req.method === "GET") {
+      if (url.pathname === "/admin" || url.pathname === "/admin/") {
+        return serveStatic("/admin.html", res);
+      }
       return serveStatic(url.pathname, res);
     }
 
@@ -107,6 +150,116 @@ function parseBoolean(value) {
     .trim()
     .replace(/^["']|["']$/g, "")
     .toLowerCase() === "true";
+}
+
+function normalizeSessionId(value) {
+  const sessionId = String(value || "").trim();
+  return /^[a-zA-Z0-9_-]{8,100}$/.test(sessionId) ? sessionId : "unknown";
+}
+
+function redactSensitiveText(value) {
+  return String(value || "")
+    .replace(/\b\d{6}\s*[- ]?\s*[1-4]\d{6}\b/g, "[주민등록번호 마스킹]")
+    .replace(/\b01[016789]\s*[- ]?\s*\d{3,4}\s*[- ]?\s*\d{4}\b/g, "[전화번호 마스킹]")
+    .replace(/\b[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, "[이메일 마스킹]");
+}
+
+function queueChatLog({ sessionId, question, answer, sources, durationMs }) {
+  const record = {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    sessionId,
+    question: redactSensitiveText(question).slice(0, 2000),
+    answer: redactSensitiveText(answer).slice(0, 12000),
+    sources: [...new Set(sources)].slice(0, 10),
+    model: OPENAI_MODEL,
+    durationMs
+  };
+
+  chatLogQueue = chatLogQueue
+    .then(async () => {
+      await fs.promises.mkdir(path.dirname(CHAT_LOG_PATH), { recursive: true });
+      await fs.promises.appendFile(
+        CHAT_LOG_PATH,
+        `${JSON.stringify(record)}\n`,
+        "utf8"
+      );
+    })
+    .catch((error) => {
+      console.error("Chat history logging failed:", error.message);
+    });
+}
+
+async function readRecentChatLogs(limit, query) {
+  if (!fs.existsSync(CHAT_LOG_PATH)) return [];
+
+  const file = await fs.promises.open(CHAT_LOG_PATH, "r");
+  try {
+    const { size } = await file.stat();
+    const maxBytes = 5 * 1024 * 1024;
+    const start = Math.max(0, size - maxBytes);
+    const buffer = Buffer.alloc(size - start);
+    await file.read(buffer, 0, buffer.length, start);
+
+    let text = buffer.toString("utf8");
+    if (start > 0) {
+      const firstNewline = text.indexOf("\n");
+      text = firstNewline === -1 ? "" : text.slice(firstNewline + 1);
+    }
+
+    const needle = query.toLocaleLowerCase("ko");
+    return text
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .reverse()
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line)];
+        } catch {
+          return [];
+        }
+      })
+      .filter((record) => {
+        if (!needle) return true;
+        return `${record.question || ""}\n${record.answer || ""}`
+          .toLocaleLowerCase("ko")
+          .includes(needle);
+      })
+      .slice(0, limit);
+  } finally {
+    await file.close();
+  }
+}
+
+function isAdminAuthorized(req) {
+  const authorization = String(req.headers.authorization || "");
+  if (!authorization.startsWith("Basic ")) return false;
+
+  try {
+    const decoded = Buffer.from(authorization.slice(6), "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    if (separator === -1) return false;
+
+    const username = decoded.slice(0, separator);
+    const password = decoded.slice(separator + 1);
+    return safeEqual(username, ADMIN_USERNAME) && safeEqual(password, ADMIN_PASSWORD);
+  } catch {
+    return false;
+  }
+}
+
+function safeEqual(left, right) {
+  const leftHash = crypto.createHash("sha256").update(String(left)).digest();
+  const rightHash = crypto.createHash("sha256").update(String(right)).digest();
+  return crypto.timingSafeEqual(leftHash, rightHash);
+}
+
+function sendAdminUnauthorized(res) {
+  res.writeHead(401, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  res.end(JSON.stringify({ error: "관리자 인증이 필요합니다." }));
 }
 
 function loadDocuments(docDir) {

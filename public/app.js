@@ -10,6 +10,7 @@ const imageModalCaption = document.querySelector("#image-modal-caption");
 const imageModalClose = document.querySelector(".image-modal-close");
 
 const history = [];
+let sessionId = createSessionId();
 
 boot();
 
@@ -76,7 +77,7 @@ async function sendMessage(message) {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message, history })
+      body: JSON.stringify({ message, history, sessionId })
     });
     const data = await readResponseJson(response);
 
@@ -99,6 +100,7 @@ async function sendMessage(message) {
 
 function resetConversation() {
   history.length = 0;
+  sessionId = createSessionId();
   messagesEl.replaceChildren();
   inputEl.value = "";
   boot();
@@ -266,4 +268,11 @@ function setBusy(isBusy) {
   quickButtons.forEach((button) => {
     button.disabled = isBusy;
   });
+}
+
+function createSessionId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }

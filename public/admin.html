@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>상담 기록 관리자</title>
+    <link rel="stylesheet" href="/admin.css" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <section id="login-view" class="login-view">
+        <form id="login-form" class="login-panel">
+          <img src="/images/CI.png" alt="하나이비인후과병원" />
+          <div>
+            <h1>상담 기록 관리자</h1>
+            <p>관리자 계정으로 로그인해 주세요.</p>
+          </div>
+          <label>
+            <span>아이디</span>
+            <input id="username" name="username" value="admin" autocomplete="username" required />
+          </label>
+          <label>
+            <span>비밀번호</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit">로그인</button>
+          <p id="login-error" class="error-text" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="dashboard-view" class="dashboard-view" hidden>
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">파란코끼리 AI상담원</p>
+            <h1>상담 기록</h1>
+          </div>
+          <button id="logout-button" type="button" class="secondary-button">로그아웃</button>
+        </header>
+
+        <section class="summary-grid" aria-label="상담 기록 요약">
+          <div class="summary-item">
+            <span>표시된 기록</span>
+            <strong id="record-count">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>평균 답변 시간</span>
+            <strong id="average-duration">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>최근 상담</span>
+            <strong id="latest-record">-</strong>
+          </div>
+        </section>
+
+        <form id="search-form" class="toolbar">
+          <label class="search-field">
+            <span class="sr-only">질문과 답변 검색</span>
+            <input id="search-input" type="search" placeholder="질문 또는 답변 검색" />
+          </label>
+          <select id="limit-select" aria-label="표시 개수">
+            <option value="100">최근 100건</option>
+            <option value="200" selected>최근 200건</option>
+            <option value="500">최근 500건</option>
+          </select>
+          <button type="submit">검색</button>
+          <button id="refresh-button" type="button" class="secondary-button">새로고침</button>
+          <button id="export-button" type="button" class="secondary-button">CSV 저장</button>
+        </form>
+
+        <p id="dashboard-message" class="dashboard-message" role="status"></p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>일시</th>
+                <th>상담번호</th>
+                <th>질문</th>
+                <th>답변</th>
+                <th>참고자료</th>
+                <th>응답시간</th>
+              </tr>
+            </thead>
+            <tbody id="records-body"></tbody>
+          </table>
+          <div id="empty-state" class="empty-state" hidden>저장된 상담 기록이 없습니다.</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

@@ -15,3 +15,9 @@ services:
         value: gpt-5.6-sol
       - key: MAX_OUTPUT_TOKENS
         value: "1400"
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CHAT_LOG_PATH
+        value: data/chat-history.jsonl
